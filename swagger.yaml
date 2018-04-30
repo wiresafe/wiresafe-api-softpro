@@ -1,0 +1,313 @@
+swagger: "2.0"
+info:
+  description: "This is the SoftPro API to Wiresafe"
+  version: "1.0.0"
+  title: "Wiresafe - Softpro API"
+host: "softpro.wiresafe.com"
+basePath: "/api/v1"
+schemes:
+- "http"
+paths:
+  /user/register:
+    post:
+      tags:
+      - "user"
+      summary: "Register a new account"
+      description: ""
+      operationId: "register"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "[TBC]"
+        required: true
+        schema:
+          type: "object"
+          properties:
+            companyId:
+              type: "string"
+            fullName:
+              type: "string"
+            userId:
+              type: "string"
+            email:
+              type: "string"
+            phone:
+              type: "string"
+      responses:
+        200:
+          description: "Successful registration"
+          schema:
+            type: "object"
+            properties:
+              accessToken:
+                type: "string"
+        400:
+          description: "Invalid data supplied"
+        403:
+          description: "Not allowed"
+  /user/login:
+    post:
+      tags:
+      - "user"
+      summary: "Logs in user with credentials"
+      description: ""
+      operationId: "login"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "[TBC]"
+        required: true
+        schema:
+          type: "object"
+          properties:
+            userId:
+              type: "string"
+      responses:
+        200:
+          description: "Successfully authenticated"
+          schema:
+            type: "object"
+            properties:
+              accessToken:
+                type: "string"
+        400:
+          description: "Invalid input data"
+        401:
+          description: "Invalid credentials"
+        403:
+          description: "Not allowed to login"
+  /user/logout:
+    get:
+      tags:
+      - "user"
+      summary: "Logs out current logged in user session"
+      description: ""
+      operationId: "logoutUser"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Successfully logged out"
+        401:
+          description: "Invalid credentials"
+        403:
+          description: "Not allowed"
+      security:
+        - accessToken: []
+  /sync:
+    get:
+      tags:
+      - "realtime"
+      summary: "Get latest incoming messages"
+      description: ""
+      operationId: "sync"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "since"
+        in: "query"
+        type: "string"
+      - name: "timeout"
+        in: "query"
+        type: "integer"
+      responses:
+        200:
+          description: "Data"
+      security:
+        - accessToken: []
+  /order/{orderId}/rooms/:
+    get:
+      tags:
+      - "orders"
+      summary: "List chats for the order"
+      description: ""
+      operationId: "listRoomsForOrder"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "orderId"
+        in: "path"
+        description: "The Order ID for which we want to list rooms"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            properties:
+              rooms:
+                type: "array"
+                items:
+                  type: "string"
+                  description: "Room IDs"
+      security:
+        - accessToken: []
+    post:
+      tags:
+      - "orders"
+      summary: "Create a new room for the order"
+      description: ""
+      operationId: "roomCreate"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "orderId"
+        in: "path"
+        description: "The Order ID for which we want to create a new room"
+        required: true
+        type: "string"
+      - name: "body"
+        in: "body"
+        required: true
+        schema:
+          type: "object"
+          properties:
+            contacts:
+              type: "array"
+              items:
+                type: "object"
+                properties:
+                  fullName:
+                    type: "string"
+                  email:
+                    type: "string"
+                  phone:
+                    type: "string"
+      responses:
+        201:
+          description: "New room created"
+          schema:
+            type: "object"
+            properties:
+              roomId:
+                type: "string"
+        202:
+          description: "Room found"
+          schema:
+            type: "object"
+            properties:
+              roomId:
+                type: "string"
+      security:
+      - accessToken: []
+  /room/{roomId}/:
+    get:
+      tags:
+      - "rooms"
+      summary: "Get info about a room"
+      description: ""
+      operationId: "roomGet"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "roomId"
+        in: "path"
+        description: "The ID of the room we want to fetch data from"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Room"
+        400:
+          description: "Not Found"
+      security:
+      - accessToken: []
+  /room/{roomId}/messages/:
+    get:
+      tags:
+      - "messages"
+      summary: "Get messages from a room"
+      description: ""
+      operationId: "roomMessagesGet"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "roomId"
+        in: "path"
+        description: "The ID of the room to fetch messages from"
+        required: true
+        type: "string"
+      - name: "from"
+        in: "query"
+        type: "string"
+        required: false
+      - name: "to"
+        in: "query"
+        type: "string"
+        required: false
+      responses:
+        200:
+          description: "Data"
+        404:
+          description: "Not Found"
+      security:
+      - accessToken: []
+    post:
+      tags:
+      - "messages"
+      summary: "Send a new message in a room"
+      description: ""
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "roomId"
+        in: "path"
+        description: "The ID of the room in which the message should be sent"
+        required: true
+        type: "string"
+      - name: "body"
+        in: "body"
+        required: true
+        schema:
+          type: "object"
+          properties:
+            body:
+              type: "string"
+              description: "The raw message"
+            formattedBody:
+              type: "string"
+              description: "HTML formatted body"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+            properties:
+              id:
+                type: "string"
+                description: "The ID of the injected message"
+      security:
+      - accessToken: []
+securityDefinitions:
+  accessToken:
+    type: "apiKey"
+    name: "accessToken"
+    in: "header"
+definitions:
+  Room:
+    type: "object"
+    properties:
+      roomId:
+        type: "string"
+      contacts:
+        type: "array"
+        items:
+          $ref: "#/definitions/Contact"
+  Contact:
+    type: "object"
