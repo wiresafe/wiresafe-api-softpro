@@ -1,313 +1,607 @@
-swagger: "2.0"
+swagger: '2.0'
 info:
-  description: "This is the SoftPro API to Wiresafe"
-  version: "1.0.0"
-  title: "Wiresafe - Softpro API"
-host: "softpro.wiresafe.com"
-basePath: "/api/v1"
+  description: This is the SoftPro API to Wiresafe
+  version: "0.8.2"
+  title: Wiresafe - Softpro API
+basePath: /
 schemes:
-- "http"
+- http
+definitions:
+  Account:
+    type: object
+    properties:
+      '@id':
+        type: string
+        format: uri
+        description: Account URI
+      '@type':
+        type: string
+        enum:
+        - Account
+      identifier:
+        type: string
+        description: Source (i.e. SoftPro) identifier for the account to be created (required)
+      name:
+        type: string
+        description: Name of the account Organization
+      member:
+        type: array
+        items:
+          $ref: '#/definitions/OrganizationRole'
+      image:
+        type: string
+        format: uri
+        description: URL to company logo (optional)
+      url:
+        type: string
+        format: uri
+      telephone:
+        type: string
+        format: phone
+        example: '888-867-5309'
+      email:
+        type: string
+        format: email
+    example:
+      '@type': 'Account'
+      '@id': '/account/xxxx'
+      name: New Venture Escrow
+      telephone: '888-867-5309'
+      email: 'info@newventureescrow.com'
+      member:
+      - '@type': OrganizationRole
+        roleName: AdministratorOrganizationRole
+        member: /user/xxxx
+        memberOf: /account/xxxx
+  AccountInput:
+    type: object
+    properties:
+      account:
+        $ref: '#/definitions/Account'
+      creator:
+        $ref: '#/definitions/User'
+    example:
+      account:
+        identifier: '12345'
+        name: New Venture Escrow
+        telephone: '4084828947'
+        email: info@newventureescrow.com
+      creator:
+        idenfier: 'daveduran'
+        name: Dave Duran
+        telephone: '510-867-5309'
+        email: info@newventureescrow.com
+  Channel:
+    type: object
+    properties:
+      '@type':
+        type: string
+        example: Channel
+      '@id':
+        type: string
+        format: uri
+        example: '/channel/xxxx'
+      name:
+        type: string
+      channelGroup:
+        type: string
+      member:
+        type: array
+        items:
+          $ref: '#/definitions/OrganizationRole'
+      contains:
+        description: list of channel messages
+        type: array
+        items:
+          $ref: '#/definitions/Message'
+    example:
+      '@type': Channel
+      '@id': '/channel/xlkjladfaiu'
+      name: '#123MainStreet'
+      channelGroup: 'order:123'
+      member:
+      - '@type': OrganizationRole
+        roleName: AdministratorOrganizationRole
+        member: '/user/@jonsnow'
+      contains:
+      - '@type': Message
+        '@id': '/channel/{channelId}/{messageId}'
+  Message:
+    type: object
+    properties:
+      '@id':
+        type: string
+        format: uri
+        example: '/channel/{channelId}/{messageId}'
+      'content':
+        type: string
+        example: 'hello world'
+    example:
+      '@type': 'Message'
+      '@id': '/channel/{channelId}/{messageId}'
+      'content': 'lorem ipsum...'
+  ChannelFilter:
+    type: object
+    properties:
+      channelGroup:
+        type: string
+        example: 'order:xxxxx'
+  ChannelInput:
+    type: object
+    properties:
+      name:
+        type: string
+        description: optional name for the channel
+      channelGroup:
+        type: string
+        description: optional group name for the channel
+      invite:
+        type: array
+        items:
+          type: string
+          format: email
+  OrganizationRole:
+    type: object
+    example:
+      '@type':
+        type: string
+        enum:
+        - AdministratorOrganizationRole
+        - MemberOrganizationRole
+        - GuestOrganizationRole
+      roleName:
+        type: string
+        enum:
+        - Administrator
+        - Member
+        - Guest
+      member: '/user/xxxx'
+      memberOf: '/account/xxxx'
+    properties:
+      '@type':
+        type: string
+        enum:
+        - OrganizationRole
+      roleName:
+        type: string
+        enum:
+        - AdministratorOrganizationRole
+        - MemberOrganizationRole
+        - GuestOrganizationRole
+      member:
+        type: string
+        format: uri
+        description: 'User URI'
+      memberOf:
+        type: string
+        format: uri
+        description: 'Account URI'
+  User:
+    type: object
+    properties:
+      '@id':
+        type: string
+        format: uri
+        description: User URI
+      '@type':
+        type: string
+        enum:
+        - User
+      name:
+        type: string
+        description: name of the user
+        example: Jon Snow
+      email:
+        type: string
+        format: email
+      telephone:
+        type: string
+        format: phone
+      memberOf:
+        type: array
+        items:
+          $ref: '#/definitions/OrganizationRole'
+    example:
+      '@type': User
+      '@id': /user/xxxx
+      name: Jon Snow
+      telephone: 888-867-5309
+      email: jon@example.com
+      memberOf:
+      - '@type': OrganizationRole
+        roleName: AdministratorOrganizationRole
+        memberOf: /account/auiduf
+        member: /user/xuadfy
+  UserInput:
+    type: object
+    properties:
+      identifier:
+        type: string
+        description: 'userID from system creating the user'
+      name:
+        type: string
+      email:
+        type: string
+        format: email
+      telephone:
+        type: string
+        format: phone
+      memberOf:
+        type: array
+        items:
+          $ref: '#/definitions/OrganizationRole'
+    example:
+      identifier: 'xxxxx'
+      name: Jon Snow
+      telephone: 888-867-5309
+      email: jon@example.com
 paths:
-  /user/register:
+  '/auth/login':
     post:
       tags:
-      - "user"
-      summary: "Register a new account"
-      description: ""
-      operationId: "register"
+      - authentication
+      summary: Logs in user with credentials
+      operationId: login
       consumes:
-      - "application/json"
+      - application/json
       produces:
-      - "application/json"
+      - application/json
       parameters:
-      - in: "body"
-        name: "body"
-        description: "[TBC]"
-        required: true
-        schema:
-          type: "object"
-          properties:
-            companyId:
-              type: "string"
-            fullName:
-              type: "string"
-            userId:
-              type: "string"
-            email:
-              type: "string"
-            phone:
-              type: "string"
-      responses:
-        200:
-          description: "Successful registration"
+        - in: body
+          name: body
+          required: true
           schema:
-            type: "object"
+            type: object
+            properties:
+              userId:
+                type: string
+      responses:
+        '200':
+          description: Successfully authenticated
+          schema:
+            type: object
             properties:
               accessToken:
-                type: "string"
-        400:
-          description: "Invalid data supplied"
-        403:
-          description: "Not allowed"
-  /user/login:
-    post:
-      tags:
-      - "user"
-      summary: "Logs in user with credentials"
-      description: ""
-      operationId: "login"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "[TBC]"
-        required: true
-        schema:
-          type: "object"
-          properties:
-            userId:
-              type: "string"
-      responses:
-        200:
-          description: "Successfully authenticated"
-          schema:
-            type: "object"
-            properties:
-              accessToken:
-                type: "string"
-        400:
-          description: "Invalid input data"
-        401:
-          description: "Invalid credentials"
-        403:
-          description: "Not allowed to login"
-  /user/logout:
+                type: string
+        '400':
+          description: Invalid input data
+        '401':
+          description: Invalid credentials
+        '403':
+          description: Not allowed to login
+  '/auth/logout':
     get:
       tags:
-      - "user"
-      summary: "Logs out current logged in user session"
-      description: ""
-      operationId: "logoutUser"
+      - authentication
+      summary: Logs out current logged in user session
+      operationId: logoutUser
       produces:
-      - "application/json"
-      parameters: []
+      - application/json
       responses:
-        200:
-          description: "Successfully logged out"
-        401:
-          description: "Invalid credentials"
-        403:
-          description: "Not allowed"
+        '200':
+          description: User logged out
+  '/account':
+    post:
+      tags:
+      - account
+      summary: Create account
+      operationId: createAccount
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: "#/definitions/AccountInput"
+      responses:
+        '200':
+          description: Successful registration
+          schema:
+            $ref: '#/definitions/Account'
+    get:
+      tags:
+      - account
+      summary: List accounts
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Account'
+  '/account/{id}':
+    get:
+      tags:
+      - account
+      summary: Get account data
+      operationId: getAccount
+      produces:
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Account'
+    patch:
+      tags:
+      - account
+      summary: Update account info
+      produces:
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        required: true
+        type: string
+      - in: body
+        name: body
+        schema:
+          $ref: '#/definitions/Account'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Account'
+  '/user':
+    post:
+      tags:
+      - user
+      summary: create a new user
+      description: create a new user
+      operationId: createUser
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserInput'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+        '400':
+          description: Invalid data supplied
+        '403':
+          description: Not allowed
+        '500':
+          description: Internal Error
+    get:
+      tags:
+      - user
+      summary: List users
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+  '/user/{id}':
+    get:
+      tags:
+      - user
+      summary: Get user data
+      produces:
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        type: string
+        required: true
+        description: 'user id - i.e. jonsnow'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+    patch:
+      tags:
+      - user
+      summary: 'Update user data'
+      description: >-
+        Patch body properties are either added (if missing) or updated (if existing)
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        type: string
+        required: true
+        description: 'user id - i.e. jonsnow'
+      - in: body
+        name: body
+        schema:
+          $ref: '#/definitions/User'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+  '/channel':
+    post:
+      tags:
+      - channel
+      summary: Create a new channel
+      operationId: createChannel
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/Channel'
+      responses:
+        '201':
+          description: New room created
+          schema:
+            type: object
+            properties:
+              roomId:
+                type: string
+        '202':
+          description: Room found
+          schema:
+            type: object
+            properties:
+              roomId:
+                type: string
+      security:
+        - accessToken: []
+    get:
+      tags:
+      - channel
+      summary: List channels
+      operationId: listChannels
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: Body
+        description: channel filter
+        required: false
+        schema:
+          $ref: '#/definitions/ChannelFilter'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Channel'
+      security:
+        - accessToken: []
+  '/channel/{channel_identifier}':
+    get:
+      tags:
+      - channel
+      summary: Get channel info
+      produces:
+      - application/json
+      parameters:
+      - in: path
+        name: channel_identifier
+        type: string
+        required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Channel'
+  '/channel/{channelId}/messages/':
+    get:
+      tags:
+      - channel
+      summary: Get messages from a channel
+      description: Need description of from/to querystring params
+      operationId: channelMessagesGet
+      produces:
+        - application/json
+      parameters:
+        - name: channelId
+          in: path
+          description: The ID of the room to fetch messages from
+          required: true
+          type: string
+        - name: from
+          in: query
+          type: string
+          required: false
+        - name: to
+          in: query
+          type: string
+          required: false
+      responses:
+        '200':
+          description: Data
+        '404':
+          description: Not Found
+      security:
+        - accessToken: []
+    post:
+      tags:
+        - channel
+      summary: Send a new message in a room
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: channelId
+          in: path
+          description: The ID of the room in which the message should be sent
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              body:
+                type: string
+                description: The raw message
+              formattedBody:
+                type: string
+                description: HTML formatted body
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The ID of the injected message
       security:
         - accessToken: []
   /sync:
     get:
       tags:
-      - "realtime"
-      summary: "Get latest incoming messages"
-      description: ""
-      operationId: "sync"
+        - realtime
+      summary: Get latest incoming messages
+      description: ''
+      operationId: sync
       produces:
-      - "application/json"
+        - application/json
       parameters:
-      - name: "since"
-        in: "query"
-        type: "string"
-      - name: "timeout"
-        in: "query"
-        type: "integer"
+        - name: since
+          in: query
+          type: string
+        - name: timeout
+          in: query
+          type: integer
       responses:
-        200:
-          description: "Data"
+        '200':
+          description: Data
       security:
         - accessToken: []
-  /order/{orderId}/rooms/:
-    get:
-      tags:
-      - "orders"
-      summary: "List chats for the order"
-      description: ""
-      operationId: "listRoomsForOrder"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "orderId"
-        in: "path"
-        description: "The Order ID for which we want to list rooms"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "object"
-            properties:
-              rooms:
-                type: "array"
-                items:
-                  type: "string"
-                  description: "Room IDs"
-      security:
-        - accessToken: []
-    post:
-      tags:
-      - "orders"
-      summary: "Create a new room for the order"
-      description: ""
-      operationId: "roomCreate"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "orderId"
-        in: "path"
-        description: "The Order ID for which we want to create a new room"
-        required: true
-        type: "string"
-      - name: "body"
-        in: "body"
-        required: true
-        schema:
-          type: "object"
-          properties:
-            contacts:
-              type: "array"
-              items:
-                type: "object"
-                properties:
-                  fullName:
-                    type: "string"
-                  email:
-                    type: "string"
-                  phone:
-                    type: "string"
-      responses:
-        201:
-          description: "New room created"
-          schema:
-            type: "object"
-            properties:
-              roomId:
-                type: "string"
-        202:
-          description: "Room found"
-          schema:
-            type: "object"
-            properties:
-              roomId:
-                type: "string"
-      security:
-      - accessToken: []
-  /room/{roomId}/:
-    get:
-      tags:
-      - "rooms"
-      summary: "Get info about a room"
-      description: ""
-      operationId: "roomGet"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "roomId"
-        in: "path"
-        description: "The ID of the room we want to fetch data from"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-          schema:
-            $ref: "#/definitions/Room"
-        400:
-          description: "Not Found"
-      security:
-      - accessToken: []
-  /room/{roomId}/messages/:
-    get:
-      tags:
-      - "messages"
-      summary: "Get messages from a room"
-      description: ""
-      operationId: "roomMessagesGet"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "roomId"
-        in: "path"
-        description: "The ID of the room to fetch messages from"
-        required: true
-        type: "string"
-      - name: "from"
-        in: "query"
-        type: "string"
-        required: false
-      - name: "to"
-        in: "query"
-        type: "string"
-        required: false
-      responses:
-        200:
-          description: "Data"
-        404:
-          description: "Not Found"
-      security:
-      - accessToken: []
-    post:
-      tags:
-      - "messages"
-      summary: "Send a new message in a room"
-      description: ""
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "roomId"
-        in: "path"
-        description: "The ID of the room in which the message should be sent"
-        required: true
-        type: "string"
-      - name: "body"
-        in: "body"
-        required: true
-        schema:
-          type: "object"
-          properties:
-            body:
-              type: "string"
-              description: "The raw message"
-            formattedBody:
-              type: "string"
-              description: "HTML formatted body"
-      responses:
-        200:
-          description: "OK"
-          schema:
-            type: "object"
-            properties:
-              id:
-                type: "string"
-                description: "The ID of the injected message"
-      security:
-      - accessToken: []
+
 securityDefinitions:
   accessToken:
-    type: "apiKey"
-    name: "accessToken"
-    in: "header"
-definitions:
-  Room:
-    type: "object"
-    properties:
-      roomId:
-        type: "string"
-      contacts:
-        type: "array"
-        items:
-          $ref: "#/definitions/Contact"
-  Contact:
-    type: "object"
+    type: apiKey
+    name: accessToken
+    in: header
